@@ -44,7 +44,8 @@ los mismos.
 # Construccion de modelos
 def newCatalog():
   
-    catalog = {'videos':None
+    catalog = {'videos':None,
+               'category':None,
                'video_id': None,
                'trending_date': None,
                'title': None,
@@ -64,36 +65,25 @@ def newCatalog():
 
  
     catalog['videos'] = lt.newList('SINGLE_LINKED')
+    catalog['category'] = lt.newList('SINGLE_LINKED')
 
     catalog['video_id'] = mp.newMap(10000,
                                    maptype='CHAINING',
                                    loadfactor=4.0,
                                    comparefunction=compareMapBookIds)
 
-   
-    catalog['authors'] = mp.newMap(800,
-                                   maptype='CHAINING',
-                                   loadfactor=4.0,
-                                   comparefunction=compareAuthorsByName)
- 
-    catalog['tags'] = mp.newMap(34500,
-                                maptype='PROBING',
-                                loadfactor=0.5,
-                                comparefunction=compareTagNames)
-
-    catalog['tagIds'] = mp.newMap(34500,
-                                  maptype='CHAINING',
-                                  loadfactor=4.0,
-                                  comparefunction=compareTagIds)
-
-    catalog['years'] = mp.newMap(40,
-                                 maptype='PROBING',
-                                 loadfactor=0.5,
-                                 comparefunction=compareMapYear)
 
     return catalog
     
 # Funciones para creacion de datos
+def addVideo(catalog, video):
+    lt.addLast(catalog['videos'], video)
+
+def addCategory(catalog, category):
+    lt.addLast(catalog['category'], category)
+    
+
+
 def addBook(catalog, book):
   
     lt.addLast(catalog['books'], book)
@@ -150,30 +140,17 @@ def addBookAuthor(catalog, authorname, book):
         author['average_rating'] = author['average'] / totbooks
 
 
-def addTag(catalog, tag):
 
-    newtag = newBookTag(tag['tag_name'], tag['tag_id'])
-    mp.put(catalog['tags'], tag['tag_name'], newtag)
-    mp.put(catalog['tagIds'], tag['tag_id'], newtag)
-
-
-def addBookTag(catalog, tag):
     
-    bookid = tag['goodreads_book_id']
-    tagid = tag['tag_id']
-    entry = mp.get(catalog['tagIds'], tagid)
 
-    if entry:
-        tagbook = mp.get(catalog['tags'], me.getValue(entry)['name'])
-        tagbook['value']['total_books'] += 1
-        tagbook['value']['count'] += int(tag['count'])
-        book = mp.get(catalog['bookIds'], bookid)
-        if book:
-            lt.addLast(tagbook['value']['books'], book['value'])
-    
-    
 # Funciones de consulta
-
+def nombre_id_categoria(catalog,nombre_categoria):
+    i=0
+    while i <= (lt.size(catalog['category'])-1):
+        if nombre_categoria in ((lt.getElement(catalog['category'], i)['name']).lower()):
+            id_categoria= lt.getElement(catalog['category'], i)['id']
+            return id_categoria
+        i+=1
 
 # Funciones de comparacion
 def cmpVideosbyViews(video1,video2):
@@ -181,3 +158,12 @@ def cmpVideosbyViews(video1,video2):
 
 def cmpVideosbyLikes(video1,video2):
     return(int(video1["likes"])>int(video2["likes"]))
+
+def cmpVideosbyId(id1, id2):
+
+    if (id1 == id2):
+        return 0
+    elif id1 > id2:
+        return 1
+    else:
+        return -1
