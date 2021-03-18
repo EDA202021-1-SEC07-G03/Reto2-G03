@@ -43,119 +43,137 @@ los mismos.
 
 # Construccion de modelos
 def newCatalog():
+  
+    catalog = {'videos':None
+               'video_id': None,
+               'trending_date': None,
+               'title': None,
+               'channel_title': None,
+               'category_id': None,
+               'publish_time': None,
+               'tags': None,
+               'views': None,
+               'likes': None,
+               'dislikes': None,
+               'comment_count': None,
+               'thumbnail_link': None,
+               'comments_disabled': None,
+               'video_error_or_removed': None,
+               'description': None,
+               'country': None}
+
+ 
+    catalog['videos'] = lt.newList('SINGLE_LINKED')
+
+    catalog['video_id'] = mp.newMap(10000,
+                                   maptype='CHAINING',
+                                   loadfactor=4.0,
+                                   comparefunction=compareMapBookIds)
+
    
-    catalog = {'videos': lt.newList('ARRAY_LIST'), 'category': lt.newList('ARRAY_LIST')}
+    catalog['authors'] = mp.newMap(800,
+                                   maptype='CHAINING',
+                                   loadfactor=4.0,
+                                   comparefunction=compareAuthorsByName)
+ 
+    catalog['tags'] = mp.newMap(34500,
+                                maptype='PROBING',
+                                loadfactor=0.5,
+                                comparefunction=compareTagNames)
+
+    catalog['tagIds'] = mp.newMap(34500,
+                                  maptype='CHAINING',
+                                  loadfactor=4.0,
+                                  comparefunction=compareTagIds)
+
+    catalog['years'] = mp.newMap(40,
+                                 maptype='PROBING',
+                                 loadfactor=0.5,
+                                 comparefunction=compareMapYear)
+
     return catalog
-
-
-# Funciones para agregar informacion al catalogo
-def addVideo(catalog, video):
-    lt.addLast(catalog['videos'], video)
-
-def addCategory(catalog, category):
-    lt.addLast(catalog['category'], category)
     
 # Funciones para creacion de datos
-def nombre_id_categoria(catalog,nombre_categoria):
-    i=0
-    while i <= (lt.size(catalog['category'])-1):
-        if nombre_categoria in ((lt.getElement(catalog['category'], i)['name']).lower()):
-            id_categoria= lt.getElement(catalog['category'], i)['id']
-            return id_categoria
-        i+=1
+def addBook(catalog, book):
+  
+    lt.addLast(catalog['books'], book)
+    mp.put(catalog['bookIds'], book['goodreads_book_id'], book)
+    authors = book['authors'].split(",")  # Se obtienen los autores
+    for author in authors:
+        addBookAuthor(catalog, author.strip(), book)
+    addBookYear(catalog, book)
+
+
+def addBookYear(catalog, book):
+
+    try:
+        years = catalog['years']
+        if (book['original_publication_year'] != ''):
+            pubyear = book['original_publication_year']
+            pubyear = int(float(pubyear))
+        else:
+            pubyear = 2020
+        existyear = mp.contains(years, pubyear)
+        if existyear:
+            entry = mp.get(years, pubyear)
+            year = me.getValue(entry)
+        else:
+            year = newYear(pubyear)
+            mp.put(years, pubyear, year)
+        lt.addLast(year['books'], book)
+    except Exception:
+        return None
+
+
+def newYear(pubyear):
+
+    entry = {'year': "", "books": None}
+    entry['year'] = pubyear
+    entry['books'] = lt.newList('SINGLE_LINKED', compareYears)
+    return entry
+
+
+def addBookAuthor(catalog, authorname, book):
+
+    authors = catalog['authors']
+    existauthor = mp.contains(authors, authorname)
+    if existauthor:
+        entry = mp.get(authors, authorname)
+        author = me.getValue(entry)
+    else:
+        author = newAuthor(authorname)
+        mp.put(authors, authorname, author)
+    lt.addLast(author['books'], book)
+    author['average'] += float(book['average_rating'])
+    totbooks = lt.size(author['books'])
+    if (totbooks > 0):
+        author['average_rating'] = author['average'] / totbooks
+
+
+def addTag(catalog, tag):
+
+    newtag = newBookTag(tag['tag_name'], tag['tag_id'])
+    mp.put(catalog['tags'], tag['tag_name'], newtag)
+    mp.put(catalog['tagIds'], tag['tag_id'], newtag)
+
+
+def addBookTag(catalog, tag):
+    
+    bookid = tag['goodreads_book_id']
+    tagid = tag['tag_id']
+    entry = mp.get(catalog['tagIds'], tagid)
+
+    if entry:
+        tagbook = mp.get(catalog['tags'], me.getValue(entry)['name'])
+        tagbook['value']['total_books'] += 1
+        tagbook['value']['count'] += int(tag['count'])
+        book = mp.get(catalog['bookIds'], bookid)
+        if book:
+            lt.addLast(tagbook['value']['books'], book['value'])
+    
     
 # Funciones de consulta
-def videos_pais_categoria(catalog,pais,nombre_categoria,n):
-    id_categoria = nombre_id_categoria(catalog,nombre_categoria)
-    sub_list=lt.newList('ARRAY_LIST')
-    j=1
-    while j <  (lt.size(catalog['videos'])):
-        if (pais in (lt.getElement(catalog['videos'], j)['country'].lower())) and (id_categoria == (lt.getElement(catalog['videos'], j)['category_id'])):
-            lt.addLast(sub_list, lt.getElement(catalog['videos'], j))
-        j+=1
 
-    sub_list = sub_list.copy()
-    mrg.sort(sub_list,cmpVideosbyViews)
-    subsub_list = lt.subList(sub_list, 1, n)
-    return subsub_list
-def videos_tendencia_pais(catalog,pais):
-    dates={}
-    trend={}
-    mayor=-1
-    j=1
-    while j <  (lt.size(catalog['videos'])):
-        titulo=(lt.getElement(catalog['videos'], j)['title'])
-        date=(lt.getElement(catalog['videos'], j)['trending_date'])
-        channel=(lt.getElement(catalog['videos'], j)['channel_title'])
-        country=(lt.getElement(catalog['videos'], j)['country'])
-        if pais.lower() in country.lower():
-            info=titulo+';;'+channel+';;'+country
-            if dates.get(info)==None:
-                dates[info]=lt.newList('ARRAY_LIST')
-                lt.addLast(dates[info],date)
-            else:
-                lt.addLast(dates[info],date)
-        j+=1
-    for info in dates:
-        if lt.size(dates[info])>mayor:
-            mayor=lt.size(dates[info])
-            i=info.split(';;')
-            trend['title']=i[0]
-            trend['channel']=i[1]
-            trend['country']=i[2]
-            trend['days']=mayor
-    return trend
-def videos_tendencia_categoria (catalog, nombre_categoria):
-    id_categoria = nombre_id_categoria(catalog,nombre_categoria)
-    j=1
-    dates={}
-    trend={}
-    mayor=-1
-    while j <  (lt.size(catalog['videos'])):
-        if id_categoria == (lt.getElement(catalog['videos'], j)['category_id']):
-            titulo=(lt.getElement(catalog['videos'], j)['title'])
-            date=(lt.getElement(catalog['videos'], j)['trending_date'])
-            channel=(lt.getElement(catalog['videos'], j)['channel_title'])
-            info=titulo+';;'+channel+';;'+id_categoria
-            if dates.get(info)==None:
-                dates[info]=lt.newList('ARRAY_LIST')
-                lt.addLast(dates[info],date)
-            else:
-                lt.addLast(dates[info],date)
-        j+=1
-    for info in dates:
-        if lt.size(dates[info])>mayor:
-            mayor=lt.size(dates[info])
-            i=info.split(';;')
-            trend['title']=i[0]
-            trend['channel']=i[1]
-            trend['category id']=i[2]
-            trend['days']=mayor
-    return trend
-def videos_pais_tag(catalog,pais,tag,cantidad):
-    i=0
-    titles=lt.newList('ARRAY_LIST')
-    sub_list= mrg.sort(catalog['videos'],cmpVideosbyLikes)
-    sub_list = sub_list.copy()
-
-    subsub_list=lt.newList('ARRAY_LIST')
-    while i <  (lt.size(sub_list)):
-        str_tags= lt.getElement(sub_list, i)['tags']
-        str_tags_clean1= str_tags.replace('"','')
-        str_tags_clean1= str_tags_clean1.replace('(','')
-        str_tags_clean1= str_tags_clean1.replace(')','')
-        str_tags_clean2= str_tags_clean1.replace('|',' ')
-
-        list_tags1=str_tags_clean1.split('|')
-        list_tags2=str_tags_clean2.split()
-        list_tags3 = list_tags1 + list_tags2
-        if  (pais in (lt.getElement(sub_list, i)['country']).lower()) and (tag in list_tags3) and lt.isPresent(titles,(lt.getElement(sub_list, i)['title']))==0:
-            lt.addLast(subsub_list, lt.getElement(sub_list, i))
-            lt.addLast(titles,lt.getElement(sub_list, i)['title'])
-        i+=1
-
-    subsub_list = lt.subList(subsub_list, 1, cantidad)
-    return subsub_list
 
 # Funciones de comparacion
 def cmpVideosbyViews(video1,video2):

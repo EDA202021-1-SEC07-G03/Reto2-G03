@@ -33,7 +33,6 @@ from DISClib.Algorithms.Sorting import shellsort as shs
 El controlador se encarga de mediar entre la vista y el modelo.
 """
 
-# Inicialización del Catálogo de libros
 def initCatalog():
     """
     Llama la funcion de inicializacion del catalogo del modelo.
@@ -44,34 +43,48 @@ def initCatalog():
 
 
 # Funciones para la carga de datos
+
+
 def loadData(catalog):
     """
     Carga los datos de los archivos y cargar los datos en la
     estructura de datos
     """
-    loadVideos(catalog)
-    loadCategory(catalog)
-    
-def loadVideos(catalog):
-    vidsfile = cf.data_dir + 'videos-large.csv'
-    input_file1 = csv.DictReader(open(vidsfile, encoding='utf-8'))
-    for video in input_file1:
-        model.addVideo(catalog, video)
+    loadBooks(catalog)
+    loadTags(catalog)
+    loadBooksTags(catalog)
 
-def loadCategory(catalog):
-    categoryfile = cf.data_dir + 'category-id.csv'
-    input_file2 = csv.DictReader(open(categoryfile, encoding='utf-8'),delimiter=('\t'))
-    for category in input_file2:
-        model.addCategory(catalog, category)
+
+def loadBooks(catalog):
+    """
+    Carga los libros del archivo.  Por cada libro se indica al
+    modelo que debe adicionarlo al catalogo.
+    """
+    booksfile = cf.data_dir + 'GoodReads/books-small.csv'
+    input_file = csv.DictReader(open(booksfile, encoding='utf-8'))
+    for book in input_file:
+        model.addBook(catalog, book)
+
+
+def loadTags(catalog):
+    """
+    Carga todos los tags del archivo e indica al modelo
+    que los adicione al catalogo
+    """
+    tagsfile = cf.data_dir + 'GoodReads/tags.csv'
+    input_file = csv.DictReader(open(tagsfile, encoding='utf-8'))
+    for tag in input_file:
+        model.addTag(catalog, tag)
+
+
+def loadBooksTags(catalog):
+    """
+    Carga la información que asocia tags con libros en el catalogo
+    """
+    booktagsfile = cf.data_dir + 'GoodReads/book_tags-small.csv'
+    input_file = csv.DictReader(open(booktagsfile, encoding='utf-8'))
+    for booktag in input_file:
+        model.addBookTag(catalog, booktag)
 
 # Funciones de consulta sobre el catálogo
-def videos_pais_categoria(catalog,pais,nombre_categoria,n):
-    subsub_list= model.videos_pais_categoria(catalog,pais,nombre_categoria,n)
-    return subsub_list
-def videos_tendencia_categoria (catalog, nombre_categoria):
-    return model.videos_tendencia_categoria(catalog,nombre_categoria)
-def videos_tendencia_pais(catalog,pais):
-    return model.videos_tendencia_pais(catalog,pais)
-def videos_pais_tag(catalog,pais,tag,cantidad):
-    subsub_list= model.videos_pais_tag(catalog,pais,tag,cantidad)
-    return subsub_list
+
