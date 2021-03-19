@@ -30,6 +30,8 @@ from DISClib.ADT import list as lt
 from DISClib.Algorithms.Sorting import shellsort as sa
 assert cf
 import time
+from DISClib.ADT import map as mp
+from DISClib.DataStructures import mapentry as me
 from DISClib.Algorithms.Sorting import insertionsort as ins
 from DISClib.Algorithms.Sorting import selectionsort as ses
 from DISClib.Algorithms.Sorting import shellsort as shs
@@ -68,10 +70,14 @@ def newCatalog():
 
  
     catalog['videos'] = lt.newList('SINGLE_LINKED')
-    catalog['category'] = mp.newMap(10000,
+    catalog['category'] = mp.newMap(100,
+                                   maptype='PROBING',
+                                   loadfactor=0.5)
+
+    catalog['video_id'] = mp.newMap(10000,
                                    maptype='CHAINING',
-                                   loadfactor=1.0,
-                                   comparefunction=compareMapBookIds)
+                                   loadfactor=4.0,
+                                   comparefunction=cmpVideosbyId)
 
     return catalog
 def crear_nodo(categoria):
@@ -94,60 +100,10 @@ def addCategory(catalog, category):
     
 
 
-def addBook(catalog, book):
-  
-    lt.addLast(catalog['books'], book)
-    mp.put(catalog['bookIds'], book['goodreads_book_id'], book)
-    authors = book['authors'].split(",")  # Se obtienen los autores
-    for author in authors:
-        addBookAuthor(catalog, author.strip(), book)
-    addBookYear(catalog, book)
 
 
-def addBookYear(catalog, book):
-
-    try:
-        years = catalog['years']
-        if (book['original_publication_year'] != ''):
-            pubyear = book['original_publication_year']
-            pubyear = int(float(pubyear))
-        else:
-            pubyear = 2020
-        existyear = mp.contains(years, pubyear)
-        if existyear:
-            entry = mp.get(years, pubyear)
-            year = me.getValue(entry)
-        else:
-            year = newYear(pubyear)
-            mp.put(years, pubyear, year)
-        lt.addLast(year['books'], book)
-    except Exception:
-        return None
 
 
-def newYear(pubyear):
-
-    entry = {'year': "", "books": None}
-    entry['year'] = pubyear
-    entry['books'] = lt.newList('SINGLE_LINKED', compareYears)
-    return entry
-
-
-def addBookAuthor(catalog, authorname, book):
-
-    authors = catalog['authors']
-    existauthor = mp.contains(authors, authorname)
-    if existauthor:
-        entry = mp.get(authors, authorname)
-        author = me.getValue(entry)
-    else:
-        author = newAuthor(authorname)
-        mp.put(authors, authorname, author)
-    lt.addLast(author['books'], book)
-    author['average'] += float(book['average_rating'])
-    totbooks = lt.size(author['books'])
-    if (totbooks > 0):
-        author['average_rating'] = author['average'] / totbooks
 
 
 
@@ -170,7 +126,7 @@ def cmpVideosbyLikes(video1,video2):
     return(int(video1["likes"])>int(video2["likes"]))
 
 def cmpVideosbyId(id1, id2):
-
+    '''mapentry.getkey'''
     if (id1 == id2):
         return 0
     elif id1 > id2:
