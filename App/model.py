@@ -35,6 +35,8 @@ from DISClib.Algorithms.Sorting import selectionsort as ses
 from DISClib.Algorithms.Sorting import shellsort as shs
 from DISClib.Algorithms.Sorting import quicksort as qck
 from DISClib.Algorithms.Sorting import mergesort as mrg
+from DISClib.ADT import map as mp
+from DISClib.DataStructures import mapentry as me
 
 """
 Se define la estructura de un catálogo de videos. El catálogo tendrá dos listas, una para los videos, otra para las categorias de
@@ -45,8 +47,8 @@ los mismos.
 def newCatalog():
   
     catalog = {'videos':None,
-               'category':None,
-               'video_id': None,
+               'category':None}#,
+               ''''video_id': None,
                'trending_date': None,
                'title': None,
                'channel_title': None,
@@ -61,20 +63,28 @@ def newCatalog():
                'comments_disabled': None,
                'video_error_or_removed': None,
                'description': None,
-               'country': None}
+               'country': None}'''
+               
 
  
     catalog['videos'] = lt.newList('SINGLE_LINKED')
-    catalog['category'] = lt.newList('SINGLE_LINKED')
-
-    catalog['video_id'] = mp.newMap(10000,
+    catalog['category'] = mp.newMap(10000,
                                    maptype='CHAINING',
-                                   loadfactor=4.0,
+                                   loadfactor=1.0,
                                    comparefunction=compareMapBookIds)
 
-
     return catalog
-    
+def crear_nodo(categoria):
+    d={categoria: lt.newList('ARRAY_LIST')}
+    return d
+
+def video_categoria(catalog,video):
+    categoria=video['category_id']
+
+    return
+def agregar_categoria(catalog,category):
+    catalog_category=catalog['category']
+    if mp.cointains()
 # Funciones para creacion de datos
 def addVideo(catalog, video):
     lt.addLast(catalog['videos'], video)
