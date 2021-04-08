@@ -78,18 +78,9 @@ def newCatalog():
 
 
 
+
     return catalog
-def crear_nodo(categoria):
-    d={categoria: lt.newList('ARRAY_LIST')}
-    return d
-
-def video_categoria(catalog,video):
-    categoria=video['category_id']
-
-    return
-def agregar_categoria(catalog,category):
-    catalog_category=catalog['category']
-    if mp.cointains()
+    
 # Funciones para creacion de datos
 def addVideo(catalog, video):
     lt.addLast(catalog['videos'], video)
@@ -119,7 +110,7 @@ def cmpVideosbyLikes(video1,video2):
     return(int(video1["likes"])>int(video2["likes"]))
 
 def cmpVideosbyId(id1, id2):
-    '''mapentry.getkey'''
+
     if (id1 == id2):
         return 0
     elif id1 > id2:
