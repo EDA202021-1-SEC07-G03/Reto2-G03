@@ -64,8 +64,8 @@ def newCatalog():
  
     catalog['videos'] = lt.newList('SINGLE_LINKED')
     catalog['category'] = mp.newMap(50,
-                                maptype='PROBING',
-                                loadfactor=0.6)
+                                maptype='CHAINING',
+                                loadfactor=6.00)
     catalog['video_id'] = mp.newMap(380000,
                                 maptype='PROBING',
                                 loadfactor=0.6,
