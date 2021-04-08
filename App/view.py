@@ -56,14 +56,32 @@ while True:
     inputs = input('Seleccione una opción para continuar\n')
     if int(inputs[0]) == 1:
         print("Inicializando Catálogo ....")
-        cont = controller.initCatalog()
+        catalog = controller.initCatalog()
 
     elif int(inputs[0]) == 2:
         print("Cargando información de los archivos ....")
-        controller.loadData(cont)
+        
+        answer = controller.loadData(catalog)
+        print('Videos cargados: ' + str(lt.size(catalog['videos'])))
+        #Primer video cargado
+        print('Title: ' + lt.firstElement(catalog["videos"])['title'])
+        print('Channel title: ' + lt.firstElement(catalog["videos"])['channel_title'])
+        print('Trending date: ' + lt.firstElement(catalog["videos"])['trending_date'])
+        print('Country: ' + lt.firstElement(catalog["videos"])['country'])
+        print('Views: ' + lt.firstElement(catalog["videos"])['views'])
+        print('Likes: ' +lt.firstElement(catalog["videos"])['likes'])
+        print('Dislikes: ' +lt.firstElement(catalog["videos"])['dislikes'])
+
+
+
+        #Categorias
+        print(catalog['category']['table']['elements'])
+
+        print("Tiempo [ms]: ", f"{answer[0]:.3f}", "  ||  ",  "Memoria [kB]: ", f"{answer[1]:.3f}")
    
 
     elif int(inputs[0]) == 3:
+        pass
         
    
 

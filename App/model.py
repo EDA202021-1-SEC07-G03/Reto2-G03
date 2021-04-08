@@ -37,6 +37,7 @@ from DISClib.Algorithms.Sorting import selectionsort as ses
 from DISClib.Algorithms.Sorting import shellsort as shs
 from DISClib.Algorithms.Sorting import quicksort as qck
 from DISClib.Algorithms.Sorting import mergesort as mrg
+import datetime
 
 """
 Se define la estructura de un catálogo de videos. El catálogo tendrá dos listas, una para los videos, otra para las categorias de
@@ -58,23 +59,24 @@ def newCatalog():
                'views': None,
                'likes': None,
                'dislikes': None,
-               'comment_count': None,
-               'thumbnail_link': None,
-               'comments_disabled': None,
-               'video_error_or_removed': None,
-               'description': None,
                'country': None}
 
  
     catalog['videos'] = lt.newList('SINGLE_LINKED')
-    catalog['category'] = mp.newMap(100,
-                                   maptype='PROBING',
-                                   loadfactor=0.5)
+    catalog['category'] = mp.newMap(50,
+                                maptype='PROBING',
+                                loadfactor=0.6)
+    catalog['video_id'] = mp.newMap(380000,
+                                maptype='PROBING',
+                                loadfactor=0.6,
+                                comparefunction=cmpVideosbyId)
+    catalog['views'] = mp.newMap(380000,
+                                maptype='PROBING',
+                                loadfactor=0.6,
+                                comparefunction=cmpVideosbyId)
 
-    catalog['video_id'] = mp.newMap(10000,
-                                   maptype='CHAINING',
-                                   loadfactor=4.0,
-                                   comparefunction=cmpVideosbyId)
+
+
 
 
     return catalog
@@ -84,7 +86,7 @@ def addVideo(catalog, video):
     lt.addLast(catalog['videos'], video)
 
 def addCategory(catalog, category):
-    lt.addLast(catalog['category'], category)
+    mp.put(catalog['category'], str(category['id']),str(category['name']))
     
 
 
@@ -98,13 +100,7 @@ def addCategory(catalog, category):
     
 
 # Funciones de consulta
-def nombre_id_categoria(catalog,nombre_categoria):
-    i=0
-    while i <= (lt.size(catalog['category'])-1):
-        if nombre_categoria in ((lt.getElement(catalog['category'], i)['name']).lower()):
-            id_categoria= lt.getElement(catalog['category'], i)['id']
-            return id_categoria
-        i+=1
+
 
 # Funciones de comparacion
 def cmpVideosbyViews(video1,video2):
